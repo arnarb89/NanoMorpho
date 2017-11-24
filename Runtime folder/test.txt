@@ -1,0 +1,85 @@
+main()
+{
+	if(true) {writeln("Rétt1");};
+
+	if(false) {writeln("Rangt");};
+
+	if(false) {writeln("Rangt");}
+	elsif(true) {writeln("Rétt2");}
+	else {writeln("Rangt");};
+
+	if(false) {writeln("Rangt");}
+	else {writeln("Rétt3");};
+
+	if(false) {writeln("Rangt");}
+	elsif(false) {writeln("Rangt");}
+	elsif(true) {writeln("Rétt4");}
+	elsif(true) {writeln("Rangt");}
+	else {writeln("Rangt");};
+
+	if(false) {writeln("Rangt");}
+	elsif(false) {writeln("Rangt");}
+	elsif(true) {writeln("Rétt5");}
+	elsif(true) {writeln("Rangt");};
+
+	if(false) {writeln("Rangt");}
+	elsif(false) {writeln("Rangt");}
+	elsif(false) {writeln("Rangt");}
+	elsif(false) {writeln("Rangt");}
+	elsif(false) {writeln("Rangt");};
+
+	writeln(if(true) {"Rétt6";} else {"Rangt";});
+	writeln(if(true) {"Rétt7";});
+	writeln(if(false) {"Rangt";} else {"Rétt8";});
+	writeln(if(false) {"Rangt";} elsif(true) {"Rétt9";} else {"Rangt";});
+	writeln(if(false) {"Rangt";} elsif(false) {"Rangt";} elsif(true) {"Rétt10";} else {"Rangt";});
+	writeln(if(false) {"Rangt";} elsif(false) {"Rangt";} elsif(true) {"Rétt11";});
+	writeln(if(false) {"Rangt";} elsif(false) {"Rangt";} elsif(false) {"Rangt";} else {"Rétt12";});
+	writeln(if(true) {"Ré";}++if(false) {"Rangt";} else {"tt13";});
+
+	writeln(if((true)){"Rétt14 (segð í sviga)";}else{"Rangt";});
+
+	writeln(if((1+1)==2){"Rétt15 (plús)";}else{"Rangt";});
+	writeln(if((1-1)==0){"Rétt16 (mínus)";}else{"Rangt";});
+	writeln(if((4/2)==2){"Rétt17 (deiling)";}else{"Rangt";});
+	writeln(if((4*2)==8){"Rétt18 (margföldun)";}else{"Rangt";});
+	writeln(if((4%2)==0){"Rétt19 (modulus)";}else{"Rangt";});
+
+	writeln(if((true&& true)==true){"Rétt20";}else{"Rangt";});
+	writeln(if((true&& !true)==false){"Rétt21";}else{"Rangt";});
+	writeln(if((false||false)==false){"Rétt22";}else{"Rangt";});
+	writeln(if((false|| !false)==true){"Rétt23";}else{"Rangt";});
+
+	writeln(if(whilefall()){"Rétt25 (return true)";}else{"Rangt";});
+
+	writeln(if((1<2)==true){"Rétt26";}else{"Rangt";});
+	writeln(if((2<2)==false){"Rétt27";}else{"Rangt";});
+	writeln(if((3<2)==false){"Rétt28";}else{"Rangt";});
+
+	writeln(if((3>2)==true){"Rétt29";}else{"Rangt";});
+	writeln(if((3>3)==false){"Rétt30";}else{"Rangt";});
+	writeln(if((3>4)==false){"Rétt31";}else{"Rangt";});
+
+	writeln(if((1<=2)==true){"Rétt30";}else{"Rangt";});
+	writeln(if((2<=2)==true){"Rétt31";}else{"Rangt";});
+	writeln(if((3<=2)==false){"Rétt32";}else{"Rangt";});
+
+	writeln(if((1>=2)==false){"Rétt33";}else{"Rangt";});
+	writeln(if((2>=2)==true){"Rétt34";}else{"Rangt";});
+	writeln(if((3>=2)==true){"Rétt35";}else{"Rangt";});
+
+}
+
+whilefall(){
+	var var1;
+	var1 = 0;
+	while(var1<4){
+		var1 = var1 + 1;
+	};
+	if(var1==4){
+		writeln("Rétt24 (while)");
+	}else{
+		writeln("Rangt");
+	};
+	return true;
+}

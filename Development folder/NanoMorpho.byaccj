@@ -1,0 +1,333 @@
+%{
+	import java.io.*;
+	import java.util.*;
+%}
+
+%token ERROR, IF, ELSE, ELSIF, WHILE, VAR, RETURN, EOF
+%type <ival> ids, parlist, decls
+%token <sval> OP1, OP2, OP3, OP4, OP5, OP6, OP7, LITERAL, NAME
+%type <obj> program, fundecl, exprs, expr, smallexpr, commaseperatedexprs, body, elsif, else, nonemptycommaseperatedexprs, binopexpr1, binopexpr2, binopexpr3, binopexpr4, binopexpr5, binopexpr6, binopexpr7 
+%type <sval> opname
+%% 
+
+start											/*@ \label{grammarstart} @*/
+	:	program									{ generateProgram(name,((Vector<Object>)($1)).toArray()); }
+	;	
+
+program
+	:	program fundecl							{ ((Vector<Object>)($1)).add($2); $$=$1; }
+	|	fundecl									{ $$=new Vector<Object>(); ((Vector<Object>)($$)).add($1); }
+	;
+
+fundecl
+	:											{
+													varCount = 0;
+													varTable = new HashMap<String,Integer>();
+												}
+		NAME '(' parlist ')' '{' decls exprs '}'
+												{
+													$$=new Object[]{$2,$4,$7,((Vector<Object>)($8)).toArray()};
+												}
+	;
+
+parlist
+	:	/* empty */								{ $$=0; }
+	|	ids NAME								{ addVar($2); $$=$1+1; }
+	;
+
+ids
+	: 	/* empty */								{ $$=0; }
+	| 	ids NAME ','							{ addVar($2); $$=$1+1; }
+	;
+
+decls
+	: 	/* empty */								{ $$=0; }
+	|	VAR parlist ';'							{ $$=$2; }
+	;
+
+//VECTOR
+exprs
+	:	exprs expr ';'							{ $$=$1; ((Vector<Object>)($$)).add($2); }
+	|	/* empty	*/							{ $$=new Vector<Object>(); }
+	;
+
+expr
+	:	RETURN expr 							{ $$=new Object[]{ "RETURN", $2 }; }
+	|	NAME '=' expr 							{ $$=new Object[]{ "STORE", findVar($1), $3 }; }
+	|	binopexpr1 								{ $$=$1; }
+	;
+
+binopexpr1
+	:	binopexpr1 OP1 binopexpr2 				{ $$=new Object[]{ "CALL", $2, new Object[]{ $1, $3 }}; }
+	|	binopexpr2								{ $$=$1; }
+	;
+
+binopexpr2
+	:	binopexpr3 OP2 binopexpr2				{ $$=new Object[]{ "CALL", $2, new Object[]{ $1, $3 }}; }
+	|	binopexpr3								{ $$=$1; }
+	;
+
+binopexpr3
+	:	binopexpr3 OP3 binopexpr4				{ $$=new Object[]{ "CALL", $2, new Object[]{ $1, $3 }}; }
+	|	binopexpr4								{ $$=$1; }
+	;
+
+binopexpr4
+	:	binopexpr4 OP4 binopexpr5				{ $$=new Object[]{ "CALL", $2, new Object[]{ $1, $3 }}; }
+	|	binopexpr5								{ $$=$1; }
+	;
+
+binopexpr5
+	:	binopexpr5 OP5 binopexpr6				{ $$=new Object[]{ "CALL", $2, new Object[]{ $1, $3 }}; }
+	|	binopexpr6								{ $$=$1; }
+	;
+
+binopexpr6
+	:	binopexpr6 OP6 binopexpr7				{ $$=new Object[]{ "CALL", $2, new Object[]{ $1, $3 }}; }
+	|	binopexpr7								{ $$=$1; }
+	;
+
+binopexpr7
+	:	binopexpr7 OP7 smallexpr				{ $$=new Object[]{ "CALL", $2, new Object[]{ $1, $3 }}; }
+	|	smallexpr								{ $$=$1; }
+	;
+
+smallexpr
+	:	NAME 									{ $$=new Object[]{ "FETCH", findVar($1) }; }
+	|	NAME '(' commaseperatedexprs ')'		{ $$=new Object[]{ "CALL", $1, ((Vector<Object>)($3)).toArray() }; }
+	|	opname smallexpr 						{ $$=new Object[]{ "CALL", $1, new Object[]{$2} }; }
+	|	LITERAL 								{ $$=new Object[]{ "LITERAL", $1 }; }
+	| 	'(' expr ')' 							{ $$=$2; }
+	|	IF '(' expr ')' body elsif else			{ $$=new Object[]{ "IF", $3, $5, ((Vector<Object>)($6)).toArray(), $7 };};
+	| 	WHILE '(' expr ')' body 				{ $$=new Object[]{ "WHILE", $3, $5 }; }
+	;
+
+opname 
+	: 	OP1 									{ $$=$1; }
+	|	OP2 									{ $$=$1; }
+	|	OP3 									{ $$=$1; }
+	|	OP4 									{ $$=$1; }
+	|	OP5 									{ $$=$1; }
+	|	OP6 									{ $$=$1; }
+	|	OP7 									{ $$=$1; }
+	;
+
+commaseperatedexprs 						
+	:	/* empty */ 							{ $$=new Vector<Object>(); }
+	| 	nonemptycommaseperatedexprs 			{ $$=$1; }
+	; 
+
+nonemptycommaseperatedexprs
+	:	expr 									{ $$=new Vector<Object>(); ((Vector<Object>)($$)).add($1); }
+	|	nonemptycommaseperatedexprs ',' expr 	{ ((Vector<Object>)($1)).add($3); $$=$1; }
+	;
+
+body
+	: 	'{' exprs '}' 							{ $$=$2; ((Vector<Object>)($$)).add(0,"BODY"); $$=((Vector<Object>)($$)).toArray(); }
+	; 											
+
+elsif
+	: 	elsif ELSIF '(' expr ')' body			{ $$=$1; ((Vector<Object>)($$)).add($4); ((Vector<Object>)($$)).add($6); }
+	|	/* empty */ 							{ $$=new Vector<Object>(); }
+	;
+
+else
+	:	/* empty */ 	{ $$=null; }
+	|	ELSE body 		{ $$=$2; }
+	;
+
+%%
+
+	static private String name;
+	private NanoLexer lexer;
+	private int varCount;
+	private HashMap<String,Integer> varTable;
+
+	private void addVar( String name )
+	{
+		if( varTable.get(name) != null )
+			yyerror("Variable "+name+" already exists");
+		varTable.put(name,varCount++);
+	}
+
+	private int findVar( String name )
+	{
+		Integer res = varTable.get(name);
+		if( res == null )
+			yyerror("Variable "+name+" does not exist");
+		return res;
+	}
+
+	int last_token_read;
+
+	private int yylex()
+	{
+		int yyl_return = -1;
+		try
+		{
+			yylval = null;
+			last_token_read = yyl_return = lexer.yylex();
+			if( yylval==null )
+				yylval = new NPVal(NP.yyname[yyl_return]);
+		}
+		catch (IOException e)
+		{
+			System.err.println("IO error: "+e);
+		}
+		return yyl_return;
+	}
+
+	public void yyerror( String error )
+	{
+		System.err.println("Error:  "+error);
+		System.err.println("Token:  "+NP.yyname[last_token_read]);
+		System.err.println("Lexeme: "+lexer.yytext());
+		System.err.println("Line: "+lexer.getLine());
+		System.err.println("Column: "+lexer.getColumn());
+		System.exit(1);
+	}
+
+	public NP( Reader r )
+	{
+		lexer = new NanoLexer(r,this);
+	}
+
+	public static void main( String args[] ) throws IOException {
+			NP yyparser = new NP(new FileReader(args[0]));
+			name = args[0].substring(0,args[0].lastIndexOf('.'));
+			yyparser.yyparse();
+		}
+
+	public static void emit( String s )		/*@ \label{byaccgeneratorstart} @*/
+	{
+		System.out.println(s);
+	}
+
+	static void generateProgram( String name, Object[] p )
+	{
+		emit("\""+name+".mexe\" = main in");
+		emit("!{{");
+		for( int i=0 ; i!=p.length ; i++ ) generateFunction((Object[])p[i]);
+		emit("}}*BASIS;");
+	}
+
+	static void generateFunction( Object[] f )
+	{
+		// Object[] f =  [ String funName, int numOfArgs, int numOfVars, Object[ Object[] expr, Object[] expr, ..., Object[] expr] ]
+		String funName = (String)f[0];
+		int numOfArgs = (Integer)f[1];
+		int numOfVars = (Integer)f[2];
+		emit("#\""+funName+"[f"+numOfArgs+"]\" =");
+		emit("[");
+		emit("(MakeVal null)");
+		for(int i=0;i<numOfVars;i++) {
+			emit("(Push)");
+		}
+		for(Object expr : (Object[])f[3]) {
+			generateExpr((Object[])expr); // 
+		}
+		emit("(Return)");
+		emit("];");
+	}
+
+	static int nextLab = 1;
+
+	static int newLab()
+	{
+		return nextLab++;
+	}
+
+	static void generateExpr(Object[] e) {
+		switch ((String)e[0]) 
+      	{ 
+            case "FETCH": { 
+              	// e = [ "FETCH", int locationOfVariableOnStack ]
+                emit("(Fetch " + e[1] + ")");
+                return;
+            }
+            case "LITERAL": {
+                // e = [ "LITERAL", String literal ]
+                emit("(MakeVal " + (String)e[1] + ")");
+                return; 
+            }
+            case "IF": {
+                // ifExpr = e = [ "IF", cond, body, [cond, body, cond, body...] / [], body / null ]
+                int labElse = newLab(); 
+                int labEnd = newLab(); 
+              
+                generateExpr( (Object[]) e[1] ); 	// "if" condition
+                emit( "(GoFalse _" + labElse + ")" ); // if false go to else block
+                generateExpr( (Object[]) e[2] );  	// "if" body
+                emit( "(Go _" + labEnd + ")" ); 		// "if" body finished, go to end
+              
+              	Object[] elsif = (Object[])e[3];
+              
+              	for(int i = 0; i < elsif.length;) {
+                	//elsif
+
+                  	emit("_"+labElse+":"); 						// "else" label
+                  	labElse = newLab();							// generate new "else" label for next elsif or final else
+                  	generateExpr( (Object[]) elsif[i++] ); 		// "if" condition
+                  	emit("(GoFalse _"+labElse+")"); 			// if false go to else block
+                  	generateExpr( (Object[]) elsif[i++] );  	// "if" body
+                  	emit("(Go _"+labEnd+")"); 					// "if" body finished, go to end
+                  
+              	}
+              
+                emit("_"+labElse+":"); 				// "else" label
+              
+                if( (Object[]) e[4] != null) {
+					generateExpr( (Object[]) e[4] ); // "else" body
+                }
+              	
+                emit("_"+labEnd+":"); 				// "end" label
+              	
+              	//emit("(MakeVal null)"); 
+                return; 
+            }
+            case "BODY":{
+              	// ["BODY", expr(), expr(), expr()...., expr()]
+              	for(int i = 1; i < e.length; i++) {
+                    generateExpr( (Object[]) e[i] ); // 
+                }
+              	return;
+            }
+            case "WHILE": {
+				// whileExpr = [ "WHILE", expr() /* cond */, body() ]
+              	int labStart = newLab(); // label for the start of the loop
+              	int labEnd = newLab(); // label for right behind the while loop
+              
+              	emit("_" + labStart + ":"); // start of the loop
+              	generateExpr((Object[])e[1]); 
+              	emit("(GoFalse _" + labEnd + ")"); 
+				generateExpr((Object[])e[2]); 
+              	emit("(Go _" + labStart + ")"); 
+              	emit("_" + labEnd + ":"); 
+              	//emit("(MakeVal null)"); 
+              	return;
+            }
+            case "CALL": {
+              	// e = [ "CALL", String funName, Object[ expr(), expr(), ..., expr() ] ]
+                Object[] args = (Object[]) e[2]; 
+                if ( args.length!=0 ) generateExpr( (Object[]) args[0] );
+                for (int i = 1; i < args.length; i++ ) {
+                    emit("(Push)");
+                    generateExpr( (Object[]) args[i] );
+                }
+                emit("(Call #\"" + e[1] + "[f" + args.length + "]\"" + args.length + ")");
+                return;
+            }
+            case "RETURN": {
+              	// e = [ "RETURN", expr() ]
+				generateExpr((Object[]) e[1]); // put the value from expr() in the ac
+              	emit("(Return)");
+              	return;
+            }
+            case "STORE": {
+				// e = [ "STORE", int locationOfVariableOnStack, expr() ]
+              	generateExpr((Object[]) e[2]); // put the value of expr() in the ac
+              	emit("(Store " + e[1] + ")"); // put the value from ac in position e[1] of the stack
+              	return;
+            }
+		}
+    }
